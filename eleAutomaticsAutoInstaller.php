@@ -258,7 +258,7 @@ function eleAutmaticsAutoCreater_activate(){
                  #   add_option( 'eleAutomaticInit', '0', '', 'yes' );
                  #   wp_redirect(admin_url('/wp-admin/admin.php?page=test-plugin', 'http'), 301);
                     add_option( 'eleAutomaticInit', '1', '', 'yes' );
-                    exit;        
+                  
                 }
            
               
