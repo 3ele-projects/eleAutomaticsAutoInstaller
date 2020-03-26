@@ -40,24 +40,29 @@ function is_json($string, $return_data = false)
     return (json_last_error() == JSON_ERROR_NONE) ? ($return_data ? $data : TRUE) : FALSE;
 }
 
-function gimme_your_options($option_name)
-{
-    $blame = 'core';
-    $debug_backtrace = debug_backtrace();
-    foreach ($debug_backtrace as $call) {
-        if (empty($call['file']))
-            continue;
+// function gimme_your_options($option_name)
+// {
+//     $blame = 'core';
+//     $debug_backtrace = debug_backtrace();
+//     foreach ($debug_backtrace as $call) {
+//         if (empty($call['file']))
+//             continue;
 
-        if (!preg_match('#wp-content/((?:(?:mu-)?plugins|themes)/.+)#i', $call['file'], $matches))
-            continue;
+//         if (!preg_match('#wp-content/((?:(?:mu-)?plugins|themes)/.+)#i', $call['file'], $matches))
+//             continue;
 
-        $blame = $matches[1];
-        break;
-    }
-    $fp = fopen(plugin_dir_path(__FILE__) . '/local_setup.json', 'w');
-    fwrite($fp, json_encode($option_name, JSON_PRETTY_PRINT));   // here it will print the array pretty
-    fclose($fp);
-}
+//         $blame = $matches[1];
+//         break;
+//     }
+//     $local_setup = {
+//         "options":{
+
+//         }
+//     }
+
+//     file_put_contents ( plugin_dir_path(__FILE__) . '/local_setup.json' ,json_encode($option_name, JSON_PRETTY_PRINT), FILE_APPEND | LOCK_EX );
+   
+// }
 
 function debug_info_version_check()
 {
@@ -177,19 +182,19 @@ function wpai_init()
        
             <div id="dashboard-widgets" class="metabox-holder">
                 <div class="welcome-panel-content">
-                <h2>Willkommen bei WordPress, powered by WP Auto Installer!</h2>
+                <h2><?php _e( "Willkommen bei WordPress, powered by WP Auto Installer!", 'wpai' ); ?></h2>
                     <div>
                         <div id="dashboard-widgets" class="metabox-holder">
                             <div class="postbox-container">
                                 <table class="widefat">
                                     <thead>
                                         <tr>
-                                           <td><h3>Logs & Activity</h3></td> 
+                                           <td><h3><?php _e( "Logs & Activity", 'wpai' ); ?></h3></td> 
                                         </tr>
                                     </thead>
  <tbody>
                                         <tr>
-                                            <td><h4>Themes</h4></td>
+                                            <td><h3><?php _e( "Themes", 'wpai' ); ?></h3></td>
                                         </tr>
                                         <?php foreach ($setup['themes'] as $theme) : ?>
                                             <tr>
@@ -210,7 +215,7 @@ function wpai_init()
                                             </tr>
                                         <?php endforeach; ?>
                                         <tr>
-                                            <td>Plugins</td>
+                                            <td><h2><?php _e( "Plugins", 'wpai' ); ?></h2></td>
                                         </tr>
                                         <?php foreach ($setup['plugins'] as $plugin) : ?>
                                             <tr>
@@ -227,7 +232,7 @@ function wpai_init()
                                         <?php endforeach; ?>
 
                                         <tr>
-                                            <td>Options</td>
+                                            <td><?php _e( "Options", 'wpai' ); ?></td>
                                         </tr>
                                         <?php foreach ($setup['options'] as $option) : ?>
                                             <?php $local_option = get_option($option['key']); ?>
@@ -255,20 +260,16 @@ function wpai_init()
                                 </table>
                             </div>
                             <div class="postbox-container">
-                           
-
-                     
                                     <table class="widefat">
                                     <thead>
                                         <tr>
-                                           <td><h3>Debug & System</h3></td> 
+                                           <td><h3><?php _e( "Debug & System", 'wpai' ); ?> </h3></td> 
                                         </tr>
                                     </thead>
+                                    <tbody>
                                         <?php echo debug_info_version_check(); ?>
+                                        </tbody>
                                                 </table>
-                                   
-                        
-
                             </div>
                    </div>
 
@@ -302,7 +303,7 @@ function wpai_init()
                     else {
                         $wpai_options['mu_plugin'] = 0; 
                     }                   
-                    $wpai_options['send_log'] = '';                  
+                                   
                     $wpai_options['wpai_score'] = '';
                     add_option('wpai_options', $wpai_options, 'yes');
                 }
@@ -316,17 +317,16 @@ function wpai_init()
                     }
                     update_option('wpai_options', $wpai_options, 'yes');  
                 }
-                
+             //   add_action('add_option', 'gimme_your_options');
+              //  add_action('update_option', 'gimme_your_options'); 
 
-            }
-            add_action('add_option', 'gimme_your_options');
-            add_action('update_option', 'gimme_your_options');
+            } 
             function sample_admin_notice__success()
             {
                 ?>
                   <div class="notice notice-success is-dismissible">
-                  <h1>  Hi,I hope everything is fine. Don't forgot to delete the wpai Installer (mu-plguin)</h1> 
-             
+                  <h2><?php _e( "Hi, welcome to WordPress.", 'wpai' ); ?>  </h2> 
+             <p><?php _e( "Don't forgot to delete the WP Installer", 'wpai')  ?> </p>
                  
                   <?php echo '<form action="options-general.php?page=wpai" method="post">';
                                 wp_nonce_field('delete_mu-plugin');
@@ -334,7 +334,6 @@ function wpai_init()
                                 submit_button('Delete Installer');
                                 echo '</form>';
                                 ?>
- 
  <?php echo '<form action="options-general.php?page=wpai" method="post">';
 wp_nonce_field('send_logs_action');
 echo '<input type="hidden" value="true" name="send_logs" />';
@@ -346,9 +345,9 @@ echo '</form>';
     </div>
                 <?php
             }
-                 add_action( 'admin_init', 'wpai_activate_activate' );  
+                 add_action( 'admin_init', 'wpai_activate' );  
                  if (get_option('wpai_options')): 
-            if ((get_option('wpai_options')['mu_plugin'] == 1) or (get_option('wpai_options')['send_logs'] == 0) ){
+            if (get_option('wpai_options')['mu_plugin'] == 1){
                 add_action('admin_notices', 'sample_admin_notice__success');
             } 
         endif;        
