@@ -229,6 +229,7 @@ function wpai_init()
                                                 </td>
 
                                             </tr>
+    
                                         <?php endforeach; ?>
 
                                         <tr>
@@ -250,6 +251,10 @@ function wpai_init()
                                                 </td>
 
                                             </tr>
+      <tr>
+         <td>        <?php  print_r(json_encode($local_option)); ?></td>
+                              <td>                  <?php  print_r(json_encode($option['value'])); ?></td>
+     </tr>
                                         <?php endforeach; ?>
                                     </tbody>
 
