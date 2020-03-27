@@ -40,29 +40,76 @@ function is_json($string, $return_data = false)
     return (json_last_error() == JSON_ERROR_NONE) ? ($return_data ? $data : TRUE) : FALSE;
 }
 
-// function gimme_your_options($option_name)
-// {
-//     $blame = 'core';
-//     $debug_backtrace = debug_backtrace();
-//     foreach ($debug_backtrace as $call) {
-//         if (empty($call['file']))
-//             continue;
+function create_local_setup_json($setup) { 
 
-//         if (!preg_match('#wp-content/((?:(?:mu-)?plugins|themes)/.+)#i', $call['file'], $matches))
-//             continue;
-
-//         $blame = $matches[1];
-//         break;
-//     }
-//     $local_setup = {
-//         "options":{
-
-//         }
-//     }
-
-//     file_put_contents ( plugin_dir_path(__FILE__) . '/local_setup.json' ,json_encode($option_name, JSON_PRETTY_PRINT), FILE_APPEND | LOCK_EX );
    
-// }
+    $local_plugins=[];
+    $plugins = get_plugins();
+    $keys = array_keys($plugins); 
+    foreach ($keys as $plugin) {
+        $local_plugin = [];
+        $plugin_key = explode("/",$plugin);
+        $local_plugin['name']= $plugins[$plugin]['Name'];
+        $local_plugin['version']= $plugins[$plugin]['Version'];
+        $local_plugin['path']= $plugin_key[0];
+        $local_plugin['file']= $plugin_key[1];
+
+        $local_plugins[]= $local_plugin; 
+    }
+
+/*     $local_themes=[];
+    $themes = wp_get_themes();
+     print_r($themes);
+    $keys = array_keys($themes); 
+    foreach ($themes as $theme) {
+        $local_theme = [];
+        print_r($theme);
+    break;
+        $theme_key = explode("/",$theme);
+        $local_theme['name']= $theme['headers:WP_Theme:private']['Name'];
+        $local_theme['version']= $theme['headers:WP_Theme:private']['Version'];
+
+
+        $local_themes .= $local_theme; 
+    } */
+ 
+        $local_options=[];
+
+    $wpai_options = $setup['options'];
+    foreach ($wpai_options as $option) {
+        $local_option = [];
+
+        $local_option['key']= $option['key'];
+        $local_option['value']= get_option($option['key']);
+        $local_options[] = $local_option; 
+       
+    }
+    $local_setup = [];
+
+    $local_setup['setup']['options'] = $local_options;
+    $local_setup['setup']['plugins'] = $local_plugins;
+    file_put_contents ( plugin_dir_path(__FILE__) . '/local_setup.json' ,json_encode($local_setup, JSON_PRETTY_PRINT), FILE_APPEND | LOCK_EX );
+}
+
+function gimme_your_options($option_name)
+{
+    $blame = 'core';
+    $debug_backtrace = debug_backtrace();
+    foreach ($debug_backtrace as $call) {
+        if (empty($call['file']))
+            continue;
+
+        if (!preg_match('#wp-content/((?:(?:mu-)?plugins|themes)/.+)#i', $call['file'], $matches))
+            continue;
+
+        $blame = $matches[1];
+        break;
+    }
+    $options_log = $option_name.',';
+    
+    file_put_contents ( plugin_dir_path(__FILE__) . '/action.logs' ,$options_log, FILE_APPEND | LOCK_EX );
+   
+}
 
 function debug_info_version_check()
 {
@@ -175,6 +222,7 @@ function wpai_init()
    
     $configdata = json_decode(file_get_contents('http://json.testing.threeelements.de/19'), true);
     $setup =  $configdata['setup'];
+    create_local_setup_json($setup);
 
  
 ?>
@@ -233,7 +281,7 @@ function wpai_init()
                                         <?php endforeach; ?>
 
                                         <tr>
-                                            <td><?php _e( "Options", 'wpai' ); ?></td>
+                                            <td><h2><?php _e( "Options", 'wpai' ); ?></h2></td>
                                         </tr>
                                         <?php foreach ($setup['options'] as $option) : ?>
                                             <?php $local_option = get_option($option['key']); ?>
@@ -251,10 +299,12 @@ function wpai_init()
                                                 </td>
 
                                             </tr>
+                                            <?php if ((is_array($local_option)) or (is_array($option['value']))):?>
       <tr>
-         <td>        <?php  print_r(json_encode($local_option)); ?></td>
-                              <td>                  <?php  print_r(json_encode($option['value'])); ?></td>
+         <td style="word-break: break-all; ">        <?php  echo json_encode($local_option); ?></td>
+         <td style="word-break: break-all; ">                <?php  echo json_encode($option['value']); ?></td>
      </tr>
+                                            <?php endif;?>
                                         <?php endforeach; ?>
                                     </tbody>
 
@@ -322,8 +372,8 @@ function wpai_init()
                     }
                     update_option('wpai_options', $wpai_options, 'yes');  
                 }
-             //   add_action('add_option', 'gimme_your_options');
-              //  add_action('update_option', 'gimme_your_options'); 
+                add_action('add_option', 'gimme_your_options');
+                add_action('update_option', 'gimme_your_options'); 
 
             } 
             function sample_admin_notice__success()
