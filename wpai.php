@@ -3,11 +3,11 @@
 /**
  * Plugin Name:     WP AutoInstaller
  * Plugin URI:      https://wpai.3ele.de
- * Description:     PLUGIN DESCRIPTION HERE
+ * Description:     Install from local Setup
  * Author:          Sebastian Weiss
- * Author URI:      YOUR SITE HERE
+ * Author URI:      wpai.3ele.de
  * Text Domain:     WP Auto Installer
- * Domain Path:     /languages
+ * Domain Path:     /wpai
  * Version:         0.1.0
  *
  */
@@ -18,7 +18,7 @@
 function send_logs()
 {
     $email = get_option('admin_email');
-    $to = 'agentur@3ele.de';
+    $to = 'wpai@3ele.de';
     $message = debug_info_version_check();
     $subject = 'Installer Log from setup:';
     $headers = 'From: ' . $email . "\r\n" .
@@ -27,9 +27,6 @@ function send_logs()
     $attachments = plugin_dir_path(__FILE__) . '/local_setup.json';
     $sent =  wp_mail($to, $subject, $message, $headers, $attachments);
     if ($sent == True) { 
-    $wpai_options = get_option('wpai_options');
-    $wpai_options['send_log'] = 1;
-    update_option('wpai_options', $wpai_options);
 }
 }
 
@@ -88,7 +85,7 @@ function create_local_setup_json($setup) {
 
     $local_setup['setup']['options'] = $local_options;
     $local_setup['setup']['plugins'] = $local_plugins;
-    file_put_contents ( plugin_dir_path(__FILE__) . '/local_setup.json' ,json_encode($local_setup, JSON_PRETTY_PRINT), FILE_APPEND | LOCK_EX );
+    file_put_contents ( plugin_dir_path(__FILE__) . '/local_setup.json' ,json_encode($local_setup, JSON_PRETTY_PRINT) | LOCK_EX );
 }
 
 function gimme_your_options($option_name)
