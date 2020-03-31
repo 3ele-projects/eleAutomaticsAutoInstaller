@@ -6,8 +6,7 @@ Requires at least:
 Tested up to: 
 Stable tag: 
 Requires PHP: 7.0
-License: MIT
-License URI: 
+
 
 Das Interface ermöglicht die Löschung des wpai-installers nach der Installation.
 
