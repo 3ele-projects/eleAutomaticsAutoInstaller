@@ -14,21 +14,17 @@
 
 // Your code starts here.
 
-
-function send_logs()
-{
-    $email = get_option('admin_email');
-    $to = 'wpai@3ele.de';
-    $message = debug_info_version_check();
-    $subject = 'Installer Log from setup:';
-    $headers = 'From: ' . $email . "\r\n" .
-        'Reply-To: ' . $email . "\r\n";
-
-    $attachments = plugin_dir_path(__FILE__) . '/local_setup.json';
-    $sent =  wp_mail($to, $subject, $message, $headers, $attachments);
-    if ($sent == True) { 
+define( 'PLUGIN_DIR', dirname(__FILE__).'/' );  
+require_once(PLUGIN_DIR. '/classes/wpai.php');
+require_once(PLUGIN_DIR. '/admin/wpai-interface.php');
+add_action('wp_enqueue_scripts','pretty_json_init');
+// https://github.com/warfares/pretty-json
+function pretty_json_init() {
+    wp_enqueue_script( 'pretty-json-js', plugins_url( 'http://warfares.github.io/pretty-json/pretty-json-min.js', __FILE__ ));
 }
-}
+
+
+
 
 
 function is_json($string, $return_data = false)
@@ -37,56 +33,21 @@ function is_json($string, $return_data = false)
     return (json_last_error() == JSON_ERROR_NONE) ? ($return_data ? $data : TRUE) : FALSE;
 }
 
-function create_local_setup_json($setup) { 
+function wpai_update_option_init(){
+    
+    
+    //$awpi->eleAutomatics_deactivate_plugins();
+if (get_option('wpai_import_options')){
+    $awpi = new AutoWPInstance();
+    $awpi->eleAutomatics_do_custom_options();
+};
 
-   
-    $local_plugins=[];
-    $plugins = get_plugins();
-    $keys = array_keys($plugins); 
-    foreach ($keys as $plugin) {
-        $local_plugin = [];
-        $plugin_key = explode("/",$plugin);
-        $local_plugin['name']= $plugins[$plugin]['Name'];
-        $local_plugin['version']= $plugins[$plugin]['Version'];
-        $local_plugin['path']= $plugin_key[0];
-        $local_plugin['file']= $plugin_key[1];
-
-        $local_plugins[]= $local_plugin; 
+ //   $awpi->wpai_change_content();
     }
 
-/*     $local_themes=[];
-    $themes = wp_get_themes();
-     print_r($themes);
-    $keys = array_keys($themes); 
-    foreach ($themes as $theme) {
-        $local_theme = [];
-        print_r($theme);
-    break;
-        $theme_key = explode("/",$theme);
-        $local_theme['name']= $theme['headers:WP_Theme:private']['Name'];
-        $local_theme['version']= $theme['headers:WP_Theme:private']['Version'];
+add_action( 'init', 'wpai_update_option_init' );
 
 
-        $local_themes .= $local_theme; 
-    } */
- 
-        $local_options=[];
-
-    $wpai_options = $setup['options'];
-    foreach ($wpai_options as $option) {
-        $local_option = [];
-
-        $local_option['key']= $option['key'];
-        $local_option['value']= get_option($option['key']);
-        $local_options[] = $local_option; 
-       
-    }
-    $local_setup = [];
-
-    $local_setup['setup']['options'] = $local_options;
-    $local_setup['setup']['plugins'] = $local_plugins;
-    file_put_contents ( plugin_dir_path(__FILE__) . '/local_setup.json' ,json_encode($local_setup, JSON_PRETTY_PRINT) | LOCK_EX );
-}
 
 function gimme_your_options($option_name)
 {
@@ -104,7 +65,7 @@ function gimme_your_options($option_name)
     }
     $options_log = $option_name.',';
     
-    file_put_contents ( plugin_dir_path(__FILE__) . '/action.logs' ,$options_log, FILE_APPEND | LOCK_EX );
+ //   file_put_contents ( plugin_dir_path(__FILE__) . '/action.logs' ,$options_log, FILE_APPEND | LOCK_EX );
    
 }
 
@@ -160,12 +121,7 @@ function debug_info_version_check()
 
 
 
-add_action('admin_menu', 'wpai_setup_menu');
 
-function wpai_setup_menu()
-{
-    add_menu_page('WP Auto Installer', 'WP Auto Installer', 'manage_options', 'wpai', 'wpai_init');
-}
 function rrmdir($src)
 {
     $dir = opendir($src);
@@ -199,167 +155,26 @@ function delete_mu_plugin()
     }
 }
 
-function wpai_init()
-{
-    // General check for user permissions.
-    if (!current_user_can('manage_options')) {
-        wp_die(__('You do not have sufficient pilchards to access this page.'));
+function wpai_check_mu_plugin(){
+    $path = WP_CONTENT_DIR . '/mu-plugins/';
+    if (file_exists($path)) {  return True;  } else {  return False;  
     }
-    // Check whether the button has been pressed AND also check the nonce
-    if (isset($_POST['send_logs']) && check_admin_referer('send_logs_action')) {
-        // the button has been pressed AND we've passed the security check
-        send_logs();
-    }
-    // Check whether the button has been pressed AND also check the nonce
-    if (isset($_POST['delete_mu-plugin']) && check_admin_referer('delete_mu-plugin')) {
-        // the button has been pressed AND we've passed the security check
-        delete_mu_plugin();
-    }
-
-   
-    $configdata = json_decode(file_get_contents('http://json.testing.threeelements.de/19'), true);
-    $setup =  $configdata['setup'];
-    create_local_setup_json($setup);
-
- 
-?>
-    <div class="wrap">
-       
-            <div id="dashboard-widgets" class="metabox-holder">
-                <div class="welcome-panel-content">
-                <h2><?php _e( "Willkommen bei WordPress, powered by WP Auto Installer!", 'wpai' ); ?></h2>
-                    <div>
-                        <div id="dashboard-widgets" class="metabox-holder">
-                            <div class="postbox-container">
-                                <table class="widefat">
-                                    <thead>
-                                        <tr>
-                                           <td><h3><?php _e( "Logs & Activity", 'wpai' ); ?></h3></td> 
-                                        </tr>
-                                    </thead>
- <tbody>
-                                        <tr>
-                                            <td><h3><?php _e( "Themes", 'wpai' ); ?></h3></td>
-                                        </tr>
-                                        <?php foreach ($setup['themes'] as $theme) : ?>
-                                            <tr>
-                                                <td>
-                                                    <?php echo $theme['name']; ?>
-                                                </td>
-                                                <td>
-                                                    <?php
-                                                    if ($theme['status'] == 'active') :
-                                                        $theme = wp_get_theme(); // gets the current theme
-                                                        if ($theme['name'] == $theme->name || $theme['name'] == $theme->parent_theme) :
-                                                            echo '<span class="dashicons dashicons-yes"></span>';
-                                                        else : echo '<span class="dashicons dashicons-no"></span>';
-                                                        endif;
-                                                    endif; ?>
-                                                </td>
-
-                                            </tr>
-                                        <?php endforeach; ?>
-                                        <tr>
-                                            <td><h2><?php _e( "Plugins", 'wpai' ); ?></h2></td>
-                                        </tr>
-                                        <?php foreach ($setup['plugins'] as $plugin) : ?>
-                                            <tr>
-                                                <td>
-                                                    <?php echo $plugin['name']; ?>
-                                                </td>
-                                                <td>
-                                                    <?php if (is_plugin_active($plugin['path'] . '/' . $plugin['file'])) : echo '<span class="dashicons dashicons-yes"></span>';
-                                                    else : echo '<span class="dashicons dashicons-no"></span>';
-                                                    endif; ?>
-                                                </td>
-
-                                            </tr>
-    
-                                        <?php endforeach; ?>
-
-                                        <tr>
-                                            <td><h2><?php _e( "Options", 'wpai' ); ?></h2></td>
-                                        </tr>
-                                        <?php foreach ($setup['options'] as $option) : ?>
-                                            <?php $local_option = get_option($option['key']); ?>
-
-                                            <tr>
-                                                <td>
-                                                    <?php echo $option['key']; ?>
-
-
-                                                </td>
-                                                <td>
-                                                    <?php if ($option['value'] == $local_option) : echo '<span class="dashicons dashicons-yes"></span>';
-                                                    else : echo '<span class="dashicons dashicons-no"></span>';
-                                                    endif; ?>
-                                                </td>
-
-                                            </tr>
-                                            <?php if ((is_array($local_option)) or (is_array($option['value']))):?>
-      <tr>
-         <td style="word-break: break-all; ">        <?php  echo json_encode($local_option); ?></td>
-         <td style="word-break: break-all; ">                <?php  echo json_encode($option['value']); ?></td>
-     </tr>
-                                            <?php endif;?>
-                                        <?php endforeach; ?>
-                                    </tbody>
-
-                                    <tfoot>
-
-                                    </tfoot>
-
-                                </table>
-                            </div>
-                            <div class="postbox-container">
-                                    <table class="widefat">
-                                    <thead>
-                                        <tr>
-                                           <td><h3><?php _e( "Debug & System", 'wpai' ); ?> </h3></td> 
-                                        </tr>
-                                    </thead>
-                                    <tbody>
-                                        <?php echo debug_info_version_check(); ?>
-                                        </tbody>
-                                                </table>
-                            </div>
-                   </div>
-
-                           
-                        </div>
-                    </div>
-                <?php
-            }
-
-            function wpai_check_mu_plugin(){
-           
-          
-                    $path = WP_CONTENT_DIR . '/mu-plugins/';
-                
-                    if (file_exists($path)) {
-                        return True;
-                    }
-                    else {
-                        return False;
-                    }
-                }
+}  
+function wpai_activate(){
+     if (!get_option('wpai_options')) {
+        $wpai_options = [];
+        add_option('wpai_import_options', true, 'yes');
+        if (wpai_check_mu_plugin()){
+            $wpai_options['mu_plugin'] = 1;
             
-            function wpai_activate()
-            {
-                
-                if (!get_option('wpai_options')) {
-                    $wpai_options = [];
-                    if (wpai_check_mu_plugin()){
-                        $wpai_options['mu_plugin'] = 1;
-                    }
-                    else {
-                        $wpai_options['mu_plugin'] = 0; 
-                    }                   
-                                   
-                    $wpai_options['wpai_score'] = '';
-                    add_option('wpai_options', $wpai_options, 'yes');
+        }
+        else {
+            $wpai_options['mu_plugin'] = 0; 
+        }                   
+    add_option('wpai_options', $wpai_options, 'yes');
                 }
                 else {
+                    add_option('wpai_import_options', false, 'yes');
                     $wpai_options = get_option('wpai_options');
                     if (wpai_check_mu_plugin()){
                         $wpai_options['mu_plugin'] = 1;
@@ -367,40 +182,15 @@ function wpai_init()
                     else {
                         $wpai_options['mu_plugin'] = 0; 
                     }
-                    update_option('wpai_options', $wpai_options, 'yes');  
+    update_option('wpai_options', $wpai_options, 'yes');  
                 }
-                add_action('add_option', 'gimme_your_options');
-                add_action('update_option', 'gimme_your_options'); 
+
 
             } 
-            function sample_admin_notice__success()
-            {
-                ?>
-                  <div class="notice notice-success is-dismissible">
-                  <h2><?php _e( "Hi, welcome to WordPress.", 'wpai' ); ?>  </h2> 
-             <p><?php _e( "Don't forgot to delete the WP Installer", 'wpai')  ?> </p>
-                 
-                  <?php echo '<form action="options-general.php?page=wpai" method="post">';
-                                wp_nonce_field('delete_mu-plugin');
-                                echo '<input type="hidden" value="true" name="delete_mu-plugin" />';
-                                submit_button('Delete Installer');
-                                echo '</form>';
-                                ?>
- <?php echo '<form action="options-general.php?page=wpai" method="post">';
-wp_nonce_field('send_logs_action');
-echo '<input type="hidden" value="true" name="send_logs" />';
-submit_button('Send Logs');
-echo '</form>';
-?>
-   
 
-    </div>
-                <?php
-            }
-                 add_action( 'admin_init', 'wpai_activate' );  
-                 if (get_option('wpai_options')): 
-            if (get_option('wpai_options')['mu_plugin'] == 1){
-                add_action('admin_notices', 'sample_admin_notice__success');
-            } 
-        endif;        
-                ?>
+add_action( 'admin_init', 'wpai_activate' );                     
+ 
+        
+
+add_action('add_option', 'gimme_your_options');
+add_action('update_option', 'gimme_your_options'); 
