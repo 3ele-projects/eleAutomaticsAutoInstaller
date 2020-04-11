@@ -48,10 +48,10 @@ defined( 'ABSPATH' ) or die( 'Cheatin&#8217; uh?' );
 class AutoWPInstance {
     public $configdata;	
     public function __construct() {
-		    if (file_exists(plugin_dir_path('wpai-admin-1.02').'/local_setup.json')):
-			    $this->configdata = json_decode(file_get_contents(plugin_dir_path('wpai-admin-1.02').'/local_setup.json'), true);    
+		    if (file_exists(plugin_dir_path('wpai-admin-1.04').'/local_setup.json')):
+			    $this->configdata = json_decode(file_get_contents(plugin_dir_path('wpai-admin-1.04').'/local_setup.json'), true);    
 		    else:
-	    $this->configdata = json_decode(file_get_contents('http://json.testing.threeelements.de/19'), true);
+	    $this->configdata = json_decode(file_get_contents('https://www.3ele.de/wpai/setups/32'), true);
 	    endif;
         $this->configdata =  $this->configdata['setup'];
 
@@ -64,12 +64,7 @@ function plugin_activation( $plugin ) {
     if( ! function_exists('activate_plugin') ) {
         require_once ABSPATH . 'wp-admin/includes/plugin.php';
     }
-
-    if( ! is_plugin_active( $plugin ) ) {
-    
-        activate_plugin( $plugin );
-        
-    }
+is_plugin_active( $plugin ) ;
 }
 
 function eleAutomatics_deactivate_plugins() {
@@ -88,6 +83,7 @@ $this->deactivate_plugin($plugin);
 
     $plugins = $this->configdata;
     foreach ($plugins['plugins']  as $plugin) {
+
         $this->plugin_activation( $plugin['path'].'/'.$plugin['file']);
    
     }
@@ -124,6 +120,26 @@ function add_custom_option( $option ) {
     add_option($option ['key'], $option['value']);
    }
 
+}
+
+function wpai_download_plugin($plugin) {
+$this->$plugin = $plugin;
+print_r($this->$plugin['download_url']);
+
+$url = $this->$plugin['download_url'];
+$zip_file = WP_PLUGIN_DIR .'/'.$this->$plugin['path'].'.zip';
+$f = file_put_contents($zip_file, fopen($url, 'r'), LOCK_EX);
+if(FALSE === $f)
+    die("Couldn't write to file.");
+$zip = new ZipArchive;
+$res = $zip->open($this->$plugin['path'].'.zip');
+if ($res === TRUE) {
+  $zip->extractTo($this->$plugin['path']);
+  $zip->close();
+  //
+} else {
+  print_r($url );
+}
 }
 
 function eleAutomatics_do_custom_options() {

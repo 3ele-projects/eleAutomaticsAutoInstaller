@@ -40,11 +40,6 @@ function wpai_interface()
     if (isset($_POST['send_logs']) && check_admin_referer('send_logs_action')) {
         // the button has been pressed AND we've passed the security check
         $awpi = new AutoWPInstance();
-    
-        //$awpi->eleAutomatics_deactivate_plugins();
-        $awpi->eleAutomatics_activate_plugins();
-        $awpi->eleAutomatics_switch_theme();
-        $awpi->eleAutomatics_do_custom_options();
         $awpi->create_local_setup_json();
         
         $awpi->send_logs();
@@ -52,19 +47,32 @@ function wpai_interface()
     if (isset($_POST['import_local_setup']) && check_admin_referer('import_local_setup_action')) {
         // the button has been pressed AND we've passed the security check
         $awpi = new AutoWPInstance();
+        #$awpi->create_local_setup_json();
+     #   $awpi->eleAutomatics_activate_plugins();
+     #   $awpi->eleAutomatics_switch_theme();
+     #   $awpi->eleAutomatics_do_custom_options();
 
-        $awpi->create_local_setup_json();
-        
+
+        print_r($awpi->$configdata);
+        $configdata = json_decode(file_get_contents('https://www.3ele.de/wpai/setups/32'), true);
+        $plugins =  $configdata['setup']['plugins'];
+        foreach ($plugins as $plugin){
+
+            $awpi->wpai_download_plugin($plugin);
+
+        }
+
      
     }
     // Check whether the button has been pressed AND also check the nonce
     if (isset($_POST['delete_mu-plugin']) && check_admin_referer('delete_mu-plugin')) {
-        // the button has been pressed AND we've passed the security check
+        // the button has been p   //$awpi->eleAutomatics_deactivate_plugins();
+   
         delete_mu_plugin();
     }
 
    
-    $configdata = json_decode(file_get_contents('http://json.testing.threeelements.de/19'), true);
+    $configdata = json_decode(file_get_contents('https://www.3ele.de/wpai/setups/32'), true);
     $setup =  $configdata['setup'];
     
 
