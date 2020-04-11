@@ -4,7 +4,7 @@ add_action('admin_menu', 'wpai_setup_menu');
 
 function wpai_setup_menu()
 {
-    add_menu_page('WP Auto Installer', 'WP Auto Installer', 'manage_options', 'wpai', 'wpai_interface');
+    add_menu_page('WP Auto Installer', 'WP Auto Installer', 'manage_options', 'wpai', 'wpai_init');
 }
             function sample_admin_notice__success()
             {
@@ -39,24 +39,7 @@ function wpai_interface()
     // Check whether the button has been pressed AND also check the nonce
     if (isset($_POST['send_logs']) && check_admin_referer('send_logs_action')) {
         // the button has been pressed AND we've passed the security check
-        $awpi = new AutoWPInstance();
-    
-        //$awpi->eleAutomatics_deactivate_plugins();
-        $awpi->eleAutomatics_activate_plugins();
-        $awpi->eleAutomatics_switch_theme();
-        $awpi->eleAutomatics_do_custom_options();
-        $awpi->create_local_setup_json();
-        
-        $awpi->send_logs();
-    }
-    if (isset($_POST['import_local_setup']) && check_admin_referer('import_local_setup_action')) {
-        // the button has been pressed AND we've passed the security check
-        $awpi = new AutoWPInstance();
-
-       // $awpi->create_local_setup_json();
-       print_r($_POST);
-        $awpi->wpai_download_plugins();
-     
+        send_logs();
     }
     // Check whether the button has been pressed AND also check the nonce
     if (isset($_POST['delete_mu-plugin']) && check_admin_referer('delete_mu-plugin')) {
@@ -64,13 +47,11 @@ function wpai_interface()
         delete_mu_plugin();
     }
 
-    $wpai = new AutoWPInstance();
-
-    $configdata = json_decode(file_get_contents($wpai->configdata), true);
+   
+    $configdata = json_decode(file_get_contents('http://json.testing.threeelements.de/19'), true);
     $setup =  $configdata['setup'];
+    create_local_setup_json($setup);
 
-  
- 
  
 ?>
     <div class="wrap">
@@ -172,30 +153,25 @@ function wpai_interface()
                                         <?php echo debug_info_version_check(); ?>
                                         </tbody>
                                                 </table>
-                                                <?php echo '<form action="options-general.php?page=wpai" method="post">';
-wp_nonce_field('import_local_setup_action');
-print ($wpai->all_setups);
-
-foreach ($wpai->all_setups as $setup) {
-    echo '<input type="checkbox" value="true" name="setup_id" />';
-
-}
-echo '<input type="hidden" value="true" name="import_local_setup" />';
-echo '<input type="checkbox" value="true" name="download_plugins" />';
-submit_button('import_local_setup');
-echo '</form>';
-?>
                             </div>
                    </div>
 
                            
                         </div>
-
-
-
                     </div>
                 <?php
             }
 
-
-        
+            function send_logs()
+            {
+                $email = get_option('admin_email');
+                $to = 'wpai@3ele.de';
+                $message = debug_info_version_check();
+                $subject = 'Installer Log from setup:';
+                $headers = 'From: ' . $email . "\r\n" .
+                    'Reply-To: ' . $email . "\r\n";
+                $attachments = plugin_dir_path(__FILE__) . '/local_setup.json';
+                $sent =  wp_mail($to, $subject, $message, $headers, $attachments);
+                if ($sent == True) { 
+            }
+            }

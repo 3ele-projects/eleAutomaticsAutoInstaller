@@ -47,27 +47,15 @@ defined( 'ABSPATH' ) or die( 'Cheatin&#8217; uh?' );
 
 class AutoWPInstance {
     public $configdata;	
-    public $apiurl;
-    public $setups;
-    public $themes;
-    public $plugins;
-    public $options;
-    public $all_setups;
-    public $setup_id;
+    public $checksum;
     public function __construct() {
-        $this->setup_id = 19;
-        $this->setups = 'https://www.3ele.de/wpai/setups/';
-		    if (file_exists(plugin_dir_path('wpai-admin').'/local_setup.json')):
-			    $this->configdata = json_decode(file_get_contents(plugin_dir_path('wpai-admin').'/local_setup.json'), true);    
+		    if (file_exists(plugin_dir_path('wpai-admin-1.02').'/local_setup.json')):
+			    $this->configdata = json_decode(file_get_contents(plugin_dir_path('wpai-admin-1.02').'/local_setup.json'), true);    
 		    else:
-	    $this->configdata = json_decode(file_get_contents($this->setups . $this->setup_id), true);
-        endif;       
-        $this->setup =  $this->configdata['setup'];
-        $this->options =  $this->setup['options'];
-        $this->plugins =  $this->setup['plugins'];
-        $this->themes =  $this->setup['themes'];
-        
-        $this->all_setups = json_decode(file_get_contents($this->setups), true);
+	    $this->configdata = json_decode(file_get_contents('http://json.testing.threeelements.de/19'), true);
+	    endif;
+        $this->configdata =  $this->configdata['setup'];
+
 
 	}
 
@@ -85,35 +73,6 @@ function plugin_activation( $plugin ) {
     }
 }
 
-
-function wpai_download_plugin($plugin) {
-    $this->$plugin = $plugin;
-    print_r($this->$plugin['download_url']);
-    
-    $url = $this->$plugin['download_url'];
-    $zip_file = WP_PLUGIN_DIR .'/'.$this->$plugin['path'].'.zip';
-    $f = file_put_contents($zip_file, fopen($url, 'r'), LOCK_EX);
-    if(FALSE === $f)
-        die("Couldn't write to file.");
-    $zip = new ZipArchive;
-    $res = $zip->open(WP_PLUGIN_DIR .'/'.$this->$plugin['path'].'.zip');
-    if ($res === TRUE) {
-      $zip->extractTo(WP_PLUGIN_DIR .'/');
-      $zip->close();
-      //
-    } else {
-      
-    }
-    }
-
-function wpai_download_plugins() {
-        $setup  = $this->setup;     
-        foreach ($setup['plugins']  as $plugin) { 
-           $this->wpai_download_plugin($plugin) ;
-           
-            }
-    }
-
 function eleAutomatics_deactivate_plugins() {
     
     $plugins = array (
@@ -128,7 +87,7 @@ $this->deactivate_plugin($plugin);
 /* activate pugins */
  function eleAutomatics_activate_plugins() {
 
-    $plugins = $this->setup;
+    $plugins = $this->configdata;
     foreach ($plugins['plugins']  as $plugin) {
         $this->plugin_activation( $plugin['path'].'/'.$plugin['file']);
    
@@ -169,7 +128,7 @@ function add_custom_option( $option ) {
 }
 
 function eleAutomatics_do_custom_options() {
-    $options  = $this->setup;
+    $options  = $this->configdata;
     foreach ($options['options']  as $option) {
       if (is_array($option ['value'])) {
         $serialised = get_option( $option ['key'] );
@@ -190,7 +149,7 @@ function eleAutomatics_do_custom_options() {
 
 /* activate themes */
 function eleAutomatics_switch_theme() {
-    $themes  = $this->setup;
+    $themes  = $this->configdata;
     foreach ($themes['themes']  as $theme) {
         if ($theme['status'] == 'active'){
             switch_theme($theme['name']);
@@ -208,22 +167,7 @@ function wpai_change_content() {
     wp_update_post($impressum, $impressum);  
 }
 
-function send_logs()
-{
-    $email = get_option('admin_email');
-    $to = 'wpai@3ele.de';
-    $message = debug_info_version_check();
-    $subject = 'Installer Log from setup:';
-    $headers = 'From: ' . $email . "\r\n" .
-        'Reply-To: ' . $email . "\r\n";
-
-    $attachments = plugin_dir_path(__FILE__) . '/local_setup.json';
-    $sent =  wp_mail($to, $subject, $message, $headers, $attachments);
-    if ($sent == True) { 
-}
-}
-
-function create_local_setup_json() { 
+function create_local_setup_json($configdata) { 
     $local_plugins=[];
     $plugins = get_plugins();
     $keys = array_keys($plugins); 
@@ -256,8 +200,7 @@ function create_local_setup_json() {
  
     $local_options=[];
 
-    $wpai_options = $this->setup['options'];
-    
+    $wpai_options = $this->configdata['option'];
     foreach ($wpai_options as $option) {
         $local_option = [];
 
@@ -269,7 +212,6 @@ function create_local_setup_json() {
     $local_setup = [];
     $local_setup['setup']['options'] = $local_options;
     $local_setup['setup']['plugins'] = $local_plugins;
-
-    file_put_contents (PLUGIN_DIR. '/local_setup.json' ,json_encode($local_setup, JSON_PRETTY_PRINT) | LOCK_EX );
+    file_put_contents ( plugin_dir_path(__FILE__) . '/local_setup.json' ,json_encode($local_setup, JSON_PRETTY_PRINT) | LOCK_EX );
 }
 }        
